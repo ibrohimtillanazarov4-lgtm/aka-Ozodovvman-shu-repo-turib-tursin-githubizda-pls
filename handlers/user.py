@@ -17,7 +17,9 @@ from keyboards import (
 from services.subscription import is_subscribed
 from states import Contact
 from ui import (
+    DOT,
     LINE,
+    THIN,
     about_text,
     esc,
     header,
@@ -84,20 +86,21 @@ async def show_top(message: Message, state: FSMContext):
     rows = await db.top_results()
     if not rows:
         await message.answer(
-            header("🏆", "Reyting") + "\nHozircha natijalar yo'q. Birinchi bo'ling — quiz yeching! 🚀"
+            header("🏆", "Reyting") + "\n<blockquote>Hozircha natijalar yo'q.\nBirinchi bo'ling — quiz yeching! 🚀</blockquote>"
         )
         return
-    lines = [
-        f"{medal(i)} <b>{esc(r['name'])}</b> — {r['points']} ball · {r['quizzes']} quiz"
-        for i, r in enumerate(rows)
-    ]
+    lines = []
+    for i, r in enumerate(rows):
+        lines.append(f"{medal(i)}  <b>{esc(r['name'])}</b>\n      <b>{r['points']}</b> ball  <i>· {r['quizzes']} quiz</i>")
+        if i == 2 and len(rows) > 3:
+            lines.append(THIN)
     text = header("🏆", "Eng yaxshi o'quvchilar") + "\n" + "\n".join(lines)
 
     mine = await db.user_progress(message.from_user.id)
     if mine:
-        text += f"\n\n{LINE}\n🎯 Sizning o'rningiz: <b>{mine['place']}</b> / {mine['n']} ({mine['points']} ball)"
+        text += f"\n\n{LINE}\n🎯 <b>Sizning o'rningiz:</b> {mine['place']} / {mine['n']}  <i>({mine['points']} ball)</i>"
     else:
-        text += f"\n\n{LINE}\n💡 Siz hali quiz yechmagansiz — reytingga kirish uchun boshlang!"
+        text += f"\n\n{LINE}\n💡 <i>Siz hali quiz yechmagansiz — reytingga kirish uchun boshlang!</i>"
     await message.answer(text)
 
 
@@ -113,20 +116,22 @@ async def show_profile(message: Message, state: FSMContext):
 
     lines = [
         header("👤", "Mening profilim"),
-        f"🙋 Ism: <b>{esc(user.full_name)}</b>",
-        f"🔗 Tag: {user_tag(user)}",
-        f"🆔 ID: <code>{user.id}</code>",
-        f"📅 A'zo bo'lgan sana: {short_date(info['joined_at'])}",
-        f"\n{LINE}",
+        "<blockquote>"
+        f"🙋 <b>{esc(user.full_name)}</b>\n"
+        f"🔗 {user_tag(user)}\n"
+        f"🆔 <code>{user.id}</code>\n"
+        f"📅 <i>A'zo bo'lgan sana:</i> {short_date(info['joined_at'])}"
+        "</blockquote>",
+        f"\n📊 <b>Natijalar</b>\n{THIN}",
     ]
     if progress:
         lines += [
-            f"📝 Yechilgan quizlar: <b>{progress['quizzes']}</b>",
-            f"🎯 Jami ball: <b>{progress['points']}</b>",
-            f"🏅 Reytingdagi o'rin: <b>{progress['place']}</b> / {progress['n']}",
+            f"{DOT} Yechilgan quizlar:  <b>{progress['quizzes']}</b>",
+            f"{DOT} Jami ball:  <b>{progress['points']}</b>",
+            f"{DOT} Reytingdagi o'rin:  <b>{progress['place']}</b> / {progress['n']}",
         ]
     else:
-        lines.append("📭 Hali quiz yechmagansiz. «📝 Quizlar» bo'limidan boshlang!")
+        lines.append("📭 <i>Hali quiz yechmagansiz. «📝 Quizlar» bo'limidan boshlang!</i>")
     await message.answer("\n".join(lines))
 
 
@@ -136,7 +141,7 @@ async def contact_start(message: Message, state: FSMContext):
     await state.set_state(Contact.message)
     await message.answer(
         header("✉️", "Murojaat")
-        + "\nSavol, taklif yoki shikoyatingizni yozing — adminlarga yetkazaman.\n"
+        + "\n<blockquote>Savol, taklif yoki shikoyatingizni yozing — adminlarga yetkazaman.</blockquote>\n"
         "<i>Bekor qilish: /cancel</i>"
     )
 
@@ -146,9 +151,9 @@ async def contact_send(message: Message, state: FSMContext):
     user = message.from_user
     await db.upsert_user(user.id, user.full_name, user.username)
     text = (
-        f"✉️ <b>Yangi murojaat</b>\n{LINE}\n\n"
-        f"👤 {mention(user.id, user.full_name)} · <code>{user.id}</code>\n\n"
-        f"{esc(message.text)}"
+        f"✉️  <b>YANGI MUROJAAT</b>\n{LINE}\n\n"
+        f"👤 {mention(user.id, user.full_name)}  ·  <code>{user.id}</code>\n\n"
+        f"<blockquote>{esc(message.text)}</blockquote>"
     )
     delivered = 0
     for admin_id in await db.list_admins():
@@ -159,7 +164,7 @@ async def contact_send(message: Message, state: FSMContext):
             continue
     await state.clear()
     if delivered:
-        await message.answer("✅ Murojaatingiz yuborildi. Tez orada javob olasiz.", reply_markup=main_menu())
+        await message.answer("✅ <b>Murojaatingiz yuborildi.</b>\n<i>Tez orada javob olasiz.</i>", reply_markup=main_menu())
     else:
         await message.answer("⚠️ Hozir adminlarga yetkazib bo'lmadi. Keyinroq urinib ko'ring.", reply_markup=main_menu())
 

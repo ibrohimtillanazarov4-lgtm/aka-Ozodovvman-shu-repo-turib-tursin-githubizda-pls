@@ -6,9 +6,9 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 import database as db
-from keyboards import BTN_QUIZ, LETTERS, options_kb, quiz_list_kb, result_kb
+from keyboards import BTN_QUIZ, CIRCLED, LETTERS, options_kb, quiz_list_kb, result_kb
 from states import QuizTaking
-from ui import LINE, esc, header, percent, progress_bar
+from ui import DOT, LINE, THIN, esc, header, percent, progress_bar
 
 router = Router()
 
@@ -17,13 +17,13 @@ async def show_quiz_list(target: Message, user_id: int):
     quizzes = await db.list_quizzes(user_id)
     if not quizzes:
         await target.answer(
-            header("📝", "Quizlar") + "\n📭 Hozircha quizlar yo'q. Yangilari qo'shilganda e'lon qilamiz!"
+            header("📝", "Quizlar") + "\n<blockquote>📭 Hozircha quizlar yo'q.\nYangilari qo'shilganda e'lon qilamiz!</blockquote>"
         )
         return
     await target.answer(
         header("📝", "Quizlar")
-        + "\n✅ — yechilgan · 📝 — yangi\n"
-        "<i>Qayta yechsangiz, eng yaxshi natijangiz hisoblanadi.</i>\n\n"
+        + "\n✅ <i>yechilgan</i>   🔹 <i>yangi</i>\n"
+        "<blockquote>Qayta yechsangiz, eng yaxshi natijangiz hisoblanadi.</blockquote>\n"
         "Tanlang 👇",
         reply_markup=quiz_list_kb(quizzes),
     )
@@ -46,10 +46,10 @@ async def list_quizzes_cb(call: CallbackQuery, state: FSMContext):
 def question_card(title, questions, idx):
     q = questions[idx]
     total = len(questions)
-    options = "\n".join(f"<b>{LETTERS[i]})</b> {esc(o)}" for i, o in enumerate(q["options"]))
+    options = "\n".join(f"{CIRCLED[i]}  {esc(o)}" for i, o in enumerate(q["options"]))
     return (
         f"📝 <b>{esc(title)}</b>\n"
-        f"{progress_bar(idx, total)}  {idx + 1}/{total}\n{LINE}\n\n"
+        f"{progress_bar(idx, total)}  <b>{idx + 1}</b>/{total}\n{LINE}\n\n"
         f"<b>{esc(q['text'])}</b>\n\n{options}"
     )
 
@@ -81,7 +81,7 @@ async def start_quiz(call: CallbackQuery, state: FSMContext):
 @router.callback_query(QuizTaking.active, F.data == "quiz_stop")
 async def stop_quiz(call: CallbackQuery, state: FSMContext):
     await state.clear()
-    await call.message.edit_text("⏹ Quiz to'xtatildi. Natija saqlanmadi.")
+    await call.message.edit_text("⏹ <b>Quiz to'xtatildi.</b>\n<i>Natija saqlanmadi.</i>")
     await call.answer()
 
 
@@ -111,10 +111,10 @@ async def answer(call: CallbackQuery, state: FSMContext):
     if is_correct:
         verdict = "✅ <b>To'g'ri!</b>"
     else:
-        verdict = f"❌ <b>Noto'g'ri.</b>\nTo'g'ri javob: <b>{LETTERS[right]}) {esc(q['options'][right])}</b>"
+        verdict = f"❌ <b>Noto'g'ri</b>\n{DOT} To'g'ri javob: <b>{CIRCLED[right]} {esc(q['options'][right])}</b>"
     await call.message.edit_text(
-        f"<b>{esc(q['text'])}</b>\n\n"
-        f"Sizning javobingiz: {LETTERS[opt]}) {esc(q['options'][opt])}\n{verdict}"
+        f"<b>{esc(q['text'])}</b>\n{THIN}\n"
+        f"Sizning javobingiz:  {CIRCLED[opt]} {esc(q['options'][opt])}\n\n{verdict}"
     )
     await call.answer("✅" if is_correct else "❌")
 
@@ -147,13 +147,13 @@ async def finish_quiz(call: CallbackQuery, state: FSMContext, data, score, total
     pct = percent(score, total)
     text = (
         header("🏁", "Quiz yakunlandi!")
-        + f"\n📝 {esc(data['title'])}\n"
-        f"🎯 Natija: <b>{score}/{total}</b> ({pct}%)\n"
+        + f"\n📝 <b>{esc(data['title'])}</b>\n\n"
+        f"🎯 Natija:  <b>{score}/{total}</b>  ·  <b>{pct}%</b>\n"
         f"{progress_bar(score, total)}\n\n"
-        f"{grade_text(pct)}"
+        f"<blockquote>{grade_text(pct)}</blockquote>"
     )
     if place:
-        text += f"\n\n📊 Bu quizdagi o'rningiz: <b>{place['place']}</b> / {place['n']}"
+        text += f"\n\n{THIN}\n📊 Bu quizdagi o'rningiz:  <b>{place['place']}</b> / {place['n']}"
     await call.message.answer(text, reply_markup=result_kb(data["quiz_id"]))
 
 

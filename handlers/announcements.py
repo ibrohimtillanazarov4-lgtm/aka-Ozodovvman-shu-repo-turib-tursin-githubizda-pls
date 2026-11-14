@@ -15,7 +15,7 @@ async def show_news(message: Message, state: FSMContext):
     await state.clear()
     items = await db.latest_announcements(5)
     if not items:
-        await message.answer(header("📢", "E'lonlar") + "\nHozircha e'lonlar yo'q.")
+        await message.answer(header("📢", "E'lonlar") + "\n<blockquote>Hozircha e'lonlar yo'q.</blockquote>")
         return
     await message.answer(header("📢", "So'nggi e'lonlar") + "\n<i>Eng yangilari avval</i> 👇")
     for item in items:

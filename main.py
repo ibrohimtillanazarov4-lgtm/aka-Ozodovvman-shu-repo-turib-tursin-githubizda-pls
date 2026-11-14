@@ -32,7 +32,7 @@ async def on_error(event: ErrorEvent):
     target = update.message or (update.callback_query.message if update.callback_query else None)
     if target:
         try:
-            await target.answer("⚠️ Kutilmagan xatolik yuz berdi. Iltimos, qaytadan urinib ko'ring.")
+            await target.answer("⚠️ <b>Kutilmagan xatolik yuz berdi.</b>\n<i>Iltimos, qaytadan urinib ko'ring.</i>")
         except Exception:
             pass
     return True

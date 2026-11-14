@@ -19,6 +19,7 @@ MENU_TEXTS = frozenset(
 )
 
 LETTERS = "ABCDEFGH"
+CIRCLED = "ⒶⒷⒸⒹⒺⒻⒼⒽ"
 
 
 def _btn(text, data):
@@ -49,15 +50,15 @@ def ai_menu():
 def quiz_list_kb(quizzes, prefix="quiz", show_done=True):
     rows = []
     for q in quizzes:
-        icon = "✅" if show_done and q["done"] else "📝"
-        rows.append([_btn(f"{icon} {q['title']} · {q['n']} savol", f"{prefix}:{q['id']}")])
+        icon = "✅" if show_done and q["done"] else "🔹"
+        rows.append([_btn(f"{icon}  {q['title']}  ·  {q['n']} savol", f"{prefix}:{q['id']}")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
 def options_kb(idx, count):
-    letters = [_btn(LETTERS[i], f"ans:{idx}:{i}") for i in range(count)]
+    letters = [_btn(CIRCLED[i], f"ans:{idx}:{i}") for i in range(count)]
     rows = [letters[i : i + 4] for i in range(0, len(letters), 4)]
-    rows.append([_btn("⏹ To'xtatish", "quiz_stop")])
+    rows.append([_btn("✕  To'xtatish", "quiz_stop")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 

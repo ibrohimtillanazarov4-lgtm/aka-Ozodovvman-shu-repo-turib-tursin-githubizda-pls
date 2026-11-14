@@ -10,9 +10,9 @@ from ui import LINE, esc, esc_attr
 
 
 def format_announcement(title, text, url=None):
-    message = f"📢 <b>{esc(title)}</b>\n{LINE}\n\n{esc(text)}"
+    message = f"📢  <b>{esc(title)}</b>\n{LINE}\n\n<blockquote>{esc(text)}</blockquote>"
     if url:
-        message += f'\n\n🔗 <a href="{esc_attr(url)}">Batafsil</a>'
+        message += f'\n\n🔗 <a href="{esc_attr(url)}">Batafsil o\'qish  →</a>'
     return message
 
 

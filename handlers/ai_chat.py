@@ -18,7 +18,7 @@ async def enter_ai(message: Message, state: FSMContext):
     await state.update_data(history=[])
     await message.answer(
         header("🤖", "AI yordamchi")
-        + "\nSavolingizni yozing — darslar, uy vazifasi yoki dasturlash bo'yicha yordam beraman.\n\n"
+        + "\n<blockquote>Savolingizni yozing — darslar, uy vazifasi yoki dasturlash bo'yicha yordam beraman.</blockquote>\n"
         "<i>Chiqish uchun pastdagi tugmani bosing.</i>",
         reply_markup=ai_menu(),
     )
@@ -27,7 +27,7 @@ async def enter_ai(message: Message, state: FSMContext):
 @router.message(AiChat.active, F.text == BTN_EXIT_AI)
 async def exit_ai(message: Message, state: FSMContext):
     await state.clear()
-    await message.answer("Asosiy menyuga qaytdingiz 🏠", reply_markup=main_menu())
+    await message.answer("🏠 <b>Asosiy menyu</b>", reply_markup=main_menu())
 
 
 @router.message(AiChat.active, F.text)
