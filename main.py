@@ -3,6 +3,8 @@ import logging
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
+from aiogram.client.session.aiohttp import AiohttpSession
+from aiogram.exceptions import TelegramNetworkError
 from aiogram.enums import ParseMode
 from aiogram.types import BotCommand, ErrorEvent
 from aiohttp import web
@@ -36,12 +38,25 @@ async def on_error(event: ErrorEvent):
     return True
 
 
+async def retry_network(func, *args, attempts=6, **kwargs):
+    """Telegram bilan vaqtincha aloqa uzilsa (timeout), bir necha marta qayta urinadi."""
+    for i in range(1, attempts + 1):
+        try:
+            return await func(*args, **kwargs)
+        except TelegramNetworkError as e:
+            if i == attempts:
+                raise
+            delay = min(2 * i, 15)
+            logging.warning("Telegram tarmoq xatosi (%s). %s soniyadan keyin qayta uriniladi (%s/%s)", e, delay, i, attempts)
+            await asyncio.sleep(delay)
+
+
 async def setup_profile(bot: Bot):
     """Bot menyusi va tavsifini o'rnatadi (xato bo'lsa, ishga tushishga xalaqit bermaydi)."""
     try:
-        await bot.set_my_commands(COMMANDS)
-        await bot.set_my_short_description(f"{BOT_NAME} — IT o'rganuvchilar uchun quiz, e'lon va AI yordamchi")
-        await bot.set_my_description(
+        await retry_network(bot.set_my_commands, COMMANDS)
+        await retry_network(bot.set_my_short_description, f"{BOT_NAME} — IT o'rganuvchilar uchun quiz, e'lon va AI yordamchi")
+        await retry_network(bot.set_my_description,
             f"💻 {BOT_NAME} · IT ta'lim boti\n\n"
             "📝 Quizlar va reyting\n📢 Musobaqa e'lonlari\n🤖 AI yordamchi\n✉️ Adminga murojaat\n\n"
             "Boshlash uchun START tugmasini bosing."
@@ -57,7 +72,8 @@ async def main():
 
     await db.init_db()
 
-    bot = Bot(BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+    session = AiohttpSession(timeout=90)  # standart 60 soniya, sekin tarmoqda yetmasligi mumkin
+    bot = Bot(BOT_TOKEN, session=session, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     dp = Dispatcher()
 
     # himoya qatlamlari: avval spam filtri, keyin majburiy obuna
@@ -76,10 +92,10 @@ async def main():
     await runner.setup()
     await web.TCPSite(runner, "0.0.0.0", PORT).start()
 
-    await bot.delete_webhook(drop_pending_updates=True)
-    await setup_profile(bot)
     try:
-        await dp.start_polling(bot)
+        await retry_network(bot.delete_webhook, drop_pending_updates=True)
+        await setup_profile(bot)
+        await dp.start_polling(bot, polling_timeout=30)
     finally:
         await runner.cleanup()
         await bot.session.close()
